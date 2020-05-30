@@ -39,9 +39,9 @@ $ make
 $ make install
 ```
 
-By default a static library `librandms.a` is created in the `lib` subfolder, and a header file `randms.h` is copied to the `include` subfolder, of the root directory for this library. One can change the `PREFIX` entry in [Makefile](Makefile#L5) to customise the installation path of the library.
+By default a static library `librandms.a` is created in the `lib` subfolder, and a header file `randms.h` is copied to the `include` subfolder, of the current working directory. One can change the `PREFIX` entry in [Makefile](Makefile#L5) to customise the installation path of the library.
 
-To link the library with a program, one has to add the `-lrandms` flag for the compilation. And if this library is not installed in the default path for system libraries, the `-I` and `-L` options are also necessary for specifying the path to the header and library files. An example of the [Makefile](example/Makefile) for linking randms is provided in the [example](example) folder.
+To link the library with a program, one has to add the `-lrandms` flag for the compilation. And if this library is not installed in the default path for system libraries, the `-I` and `-L` options are also necessary for specifying the path to the header and library files. An example of the [Makefile](examples/Makefile) for linking randms is provided in the [examples](examples) folder.
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
@@ -65,13 +65,14 @@ The arguments are:
 
 If `seed` is set to `0`, then a warning is generated, and the default random seed for the given generator will be used. And if a generator accepts only 32-bit seeds, the supplied `seed` value will be truncated, i.e., reduced modulo 2<sup>32</sup>. Once the interface is initialised with multiple streams, the _i_-th (_i_ = 0, 1, &hellip;, `nstream`&minus;1) stream starts generating numbers from _r_<sub>_i_&times;`step`&plus;1</sub> of the sequence {_r_<sub>1</sub>, _r_<sub>2</sub>, &hellip;}.
 
-The implemented random number generation algorithms, as well as the corresponding seed values and maximum allowed jumping lengths are listed below.
+The implemented random number generation algorithms, as well as the corresponding seed values and maximum allowed lengths for a single jump ahead operation are listed below.
 
-| Algorithm                                       | Macro for `type`  | `seed` | Maximum `step`         |
-|-------------------------------------------------|-------------------|--------|------------------------|
-| MRG32k3a<sup>[\[1\]](#ref1)</sup>               | `RANDMS_MRG32K3A` | 32-bit | 2<sup>63</sup>&minus;1 |
-| Mersenne Twister 19937<sup>[\[2\]](#ref2)</sup> | `RANDMS_MT19937`  | 32-bit | 2<sup>63</sup>&minus;1 |
+| Algorithm                                       | Macro for `type`  | `seed` | Maximum `step`[*](#foot1) |
+|-------------------------------------------------|-------------------|--------|---------------------------|
+| MRG32k3a<sup>[\[1\]](#ref1)</sup>               | `RANDMS_MRG32K3A` | 32-bit | 2<sup>63</sup>&minus;1    |
+| Mersenne Twister 19937<sup>[\[2\]](#ref2)</sup> | `RANDMS_MT19937`  | 32-bit | 2<sup>63</sup>&minus;1    |
 
+<sub><span id="foot1">*</span> This limitation is only for a single jump ahead operation. The total skipped length can be larger than this value if jumping ahead for multiple times (see [Revising random states](#revising-random-states)).</sub>
 
 All the random number generation routines rely on the interface created by this `randms_init` function. As an example, the interface can be initialised as follows
 
@@ -108,7 +109,7 @@ double z = rng->get_double(rng->state_stream[i]); /* for multiple streams */
 
 ### Sampling a Gaussian distribution
 
-It is also a common practice to generate random numbers that follows a Gaussian probability distribution. There are several different ways of sampling Gaussian random numbers from a uniform distribution<sup>[\[3\]](#ref3)</sup>. However, to ensure the reproducibility with multiple streams, rejection methods are not appropriate, including the fast and robust Ziggurat method<sup>[\[4\]](#ref4)</sup>. Instead, we recommend the simple [Box--Muller transform](https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform) method<sup>[\[5\]](#ref5)</sup> for generating random numbers following the Gaussian distribution.
+It is also a common practice to generate random numbers that follows a Gaussian probability distribution. There are several different ways of sampling Gaussian random numbers from a uniform distribution<sup>[\[3\]](#ref3)</sup>. However, to ensure the reproducibility with multiple streams, rejection methods are not appropriate, including the fast and robust Ziggurat method<sup>[\[4\]](#ref4)</sup>. Instead, we recommend the simple [Box&ndash;Muller transform](https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform) method<sup>[\[5\]](#ref5)</sup> for generating random numbers following the Gaussian distribution.
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
@@ -156,7 +157,7 @@ char *randms_errmsg(const int err);
 
 ### Examples
 
-An example for the usage of this library is provided in the [example](example) folder.
+An example for the usage of this library is provided in the [examples](examples) folder.
 
 It initialises two versions of the random number generator with the same seed, one with a single stream and the other with multiple streams. And the first floating-point number generated by the multiple streams are compared with the ones generated in sequence by the single stream version.
 
@@ -164,14 +165,14 @@ It initialises two versions of the random number generator with the same seed, o
 
 ## Random number generator algorithms
 
-| Algorithm              | Reference      | Period                    | Range of integers         | Jump ahead algorithm |
-|------------------------|----------------|---------------------------|---------------------------|-----------------------|
-| MRG32k3a               | [\[1\]](#ref1) | 2<sup>191</sup>           | [0, 2<sup>32</sup> - 209] | [\[6\]](#ref6)         |
-| Mersenne Twister 19937 | [\[2\]](#ref2) | 2<sup>19937</sup>&minus;1 | [0, 2<sup>32</sup> - 1]   | [\[7\]](#ref7)         |
+| Algorithm              | Reference      | Period                    | Range of integers             | Jump ahead algorithm |
+|------------------------|----------------|---------------------------|-------------------------------|-----------------------|
+| MRG32k3a               | [\[1\]](#ref1) | 2<sup>191</sup>           | [0, 2<sup>32</sup>&minus;209] | [\[6\]](#ref6)         |
+| Mersenne Twister 19937 | [\[2\]](#ref2) | 2<sup>19937</sup>&minus;1 | [0, 2<sup>32</sup>&minus;1]   | [\[7\]](#ref7)         |
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
-# Acknowledgements
+## Acknowledgements
 
 This library benefits from the following open-source projects:
 -   [The BOOST C++ Library](https://www.boost.org/)
@@ -182,19 +183,19 @@ This library benefits from the following open-source projects:
 
 ## References
 
-<span id="ref1">\[1\]</span> L’Ecuyer, 1999, [Good Parameters and Implementations for Combined Multiple Recursive Random Number Generators](https://doi.org/10.1287/opre.47.1.159), _Operations Research_, 47(1):159--164
+<span id="ref1">\[1\]</span> L’Ecuyer, 1999, [Good Parameters and Implementations for Combined Multiple Recursive Random Number Generators](https://doi.org/10.1287/opre.47.1.159), _Operations Research_, 47(1):159&ndash;164
 
-<span id="ref2">\[2\]</span> Matsumoto & Nishimura, 1998, [Mersenne Twister: A 623-Dimensionally Equidistributed Uniform Pseudo-Random Number Generator](https://doi.org/10.1145%2F272991.272995), _ACM Trans. Model. Comput. Simul._, 8(1):3--30 ([home page](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html))
+<span id="ref2">\[2\]</span> Matsumoto & Nishimura, 1998, [Mersenne Twister: A 623-Dimensionally Equidistributed Uniform Pseudo-Random Number Generator](https://doi.org/10.1145%2F272991.272995), _ACM Trans. Model. Comput. Simul._, 8(1):3&ndash;30 ([home page](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html))
 
-<span id="ref3">\[3\]</span> Thomas, Luk, Leong & Villasenor, 2007, [Gaussian Random Number Generators](https://doi.org/10.1145/1287620.1287622), _ACM Comput. Surv._, 39(4):11--es
+<span id="ref3">\[3\]</span> Thomas, Luk, Leong & Villasenor, 2007, [Gaussian Random Number Generators](https://doi.org/10.1145/1287620.1287622), _ACM Comput. Surv._, 39(4):11&ndash;es
 
-<span id="ref4">\[4\]</span> Marsaglia & Tsang, 2000, [The Ziggurat Method for Generating Random Variables](https://doi.org/10.18637/jss.v005.i08), _Journal of Statistical Software_, 5(8):1--7
+<span id="ref4">\[4\]</span> Marsaglia & Tsang, 2000, [The Ziggurat Method for Generating Random Variables](https://doi.org/10.18637/jss.v005.i08), _Journal of Statistical Software_, 5(8):1&ndash;7
 
-<span id="ref5">\[5\]</span> Box & Muller, 1958, [A Note on the Generation of Random Normal Deviates](https://doi.org/10.1214/aoms/1177706645), _Ann. Math. Statist._, 29(2):610--611
+<span id="ref5">\[5\]</span> Box & Muller, 1958, [A Note on the Generation of Random Normal Deviates](https://doi.org/10.1214/aoms/1177706645), _Ann. Math. Statist._, 29(2):610&ndash;611
 
-<span id="ref6">\[6\]</span> Bradley, du Toit, Tong, Giles & Woodhams, 2011, [Parallelization Techniques for Random Number Generators](https://doi.org/10.1016/B978-0-12-384988-5.00016-4), GPU Computing Gems Emerald Edition, _Morgan Kaufmann_, 231--246
+<span id="ref6">\[6\]</span> Bradley, du Toit, Tong, Giles & Woodhams, 2011, [Parallelization Techniques for Random Number Generators](https://doi.org/10.1016/B978-0-12-384988-5.00016-4), GPU Computing Gems Emerald Edition, _Morgan Kaufmann_, 231&ndash;246
 
-<span id="ref6">\[7\]</span> Haramoto, Matsumoto & L'Ecuyer, 2008, [A Fast Jump Ahead Algorithm for Linear Recurrences in a Polynomial Space](https://doi.org/10.1007/978-3-540-85912-3_26), Sequences and Their Applications -- SETA 2008, _Springer Berlin Heidelberg_, 290--298
+<span id="ref6">\[7\]</span> Haramoto, Matsumoto & L'Ecuyer, 2008, [A Fast Jump Ahead Algorithm for Linear Recurrences in a Polynomial Space](https://doi.org/10.1007/978-3-540-85912-3_26), Sequences and Their Applications &ndash; SETA 2008, _Springer Berlin Heidelberg_, 290&ndash;298
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
