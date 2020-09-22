@@ -1,5 +1,5 @@
 /*******************************************************************************
-* mt19937_jump.h: this file is part of the randms library.
+* mt19937.h: this file is part of the randms library.
  
 * randms: C library for generating random numbers with multiple streams.
 

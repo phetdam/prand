@@ -1,5 +1,5 @@
 /*******************************************************************************
-* mrg32k3a_jump.h: this file is part of the randms library.
+* mrg32k3a.h: this file is part of the randms library.
  
 * randms: C library for generating random numbers with multiple streams.
 
