@@ -58,7 +58,7 @@ randms_t *randms_init(const randms_rng_enum type, const uint64_t seed,
 ```
 
 The arguments are:
--   `type`: a pre-defined enumeration indicating the random number generation algorithm;
+-   `type`: a pre-defined enumerator indicating the random number generation algorithm;
 -   `seed`: a positive integer for initialising the random number generator;
 -   `nstream`: number of streams that can be sampled in parallel;
 -   `step`: the length of number sequences between adjacent streams;
@@ -68,7 +68,7 @@ If `seed` is set to `0`, then a warning is generated, and the default random see
 
 The implemented random number generation algorithms, as well as the corresponding seed values and maximum allowed lengths for a single jump ahead operation are listed below.
 
-| Algorithm                                       | Macro for `type`      | `seed` | Maximum `step`[*](#foot1) |
+| Algorithm                                       | Enumerator for `type` | `seed` | Maximum `step`[*](#foot1) |
 |-------------------------------------------------|-----------------------|--------|---------------------------|
 | MRG32k3a<sup>[\[1\]](#ref1)</sup>               | `RANDMS_RNG_MRG32K3A` | 32-bit | 2<sup>63</sup>&minus;1    |
 | Mersenne Twister 19937<sup>[\[2\]](#ref2)</sup> | `RANDMS_RNG_MT19937`  | 32-bit | 2<sup>63</sup>&minus;1    |
