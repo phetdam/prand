@@ -1,3 +1,4 @@
+
 # randms
 
 ![GitHub](https://img.shields.io/github/license/cheng-zhao/randms.svg)
@@ -52,12 +53,12 @@ To link the library with a program, one has to add the `-lrandms` flag for the c
 Before calling any random number generation functions, the interface of the random number generator has to be initialised by
 
 ```c
-randms_t *randms_init(const int type, const uint64_t seed,
+randms_t *randms_init(const randms_rng_enum type, const uint64_t seed,
     const unsigned int nstream, const uint64_t step, int *err)
 ```
 
 The arguments are:
--   `type`: a pre-defined macro indicating the random number generation algorithm;
+-   `type`: a pre-defined enumeration indicating the random number generation algorithm;
 -   `seed`: a positive integer for initialising the random number generator;
 -   `nstream`: number of streams that can be sampled in parallel;
 -   `step`: the length of number sequences between adjacent streams;
@@ -67,10 +68,10 @@ If `seed` is set to `0`, then a warning is generated, and the default random see
 
 The implemented random number generation algorithms, as well as the corresponding seed values and maximum allowed lengths for a single jump ahead operation are listed below.
 
-| Algorithm                                       | Macro for `type`  | `seed` | Maximum `step`[*](#foot1) |
-|-------------------------------------------------|-------------------|--------|---------------------------|
-| MRG32k3a<sup>[\[1\]](#ref1)</sup>               | `RANDMS_MRG32K3A` | 32-bit | 2<sup>63</sup>&minus;1    |
-| Mersenne Twister 19937<sup>[\[2\]](#ref2)</sup> | `RANDMS_MT19937`  | 32-bit | 2<sup>63</sup>&minus;1    |
+| Algorithm                                       | Macro for `type`      | `seed` | Maximum `step`[*](#foot1) |
+|-------------------------------------------------|-----------------------|--------|---------------------------|
+| MRG32k3a<sup>[\[1\]](#ref1)</sup>               | `RANDMS_RNG_MRG32K3A` | 32-bit | 2<sup>63</sup>&minus;1    |
+| Mersenne Twister 19937<sup>[\[2\]](#ref2)</sup> | `RANDMS_RNG_MT19937`  | 32-bit | 2<sup>63</sup>&minus;1    |
 
 <sub><span id="foot1">*</span> This limitation is only for a single jump ahead operation. The total skipped length can be larger than this value if jumping ahead for multiple times (see [Revising random states](#revising-random-states)).</sub>
 
@@ -78,7 +79,7 @@ All the random number generation routines rely on the interface created by this 
 
 ```c
 int err = 0;
-randms_t *rng = randms_init(RANDMS_MRG32K3A, 1, 8, 10000, &err);
+randms_t *rng = randms_init(RANDMS_RNG_MRG32K3A, 1, 8, 10000, &err);
 ```
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
@@ -96,14 +97,23 @@ Here `rng` is the interface initialised in the previous section. While if there 
 long x = rng->get(rng->state_stream[i]);          /* for multiple streams */
 ```
 
-The minimum and maximum integer values that can be generated are stored in `rng->min` and `rng->max`, respectively. These values can be used with the `rng->get` function to sample uniform numbers in a custom range. For instance, we have provided the function for generating a double-precision floating-point number uniformly distributed in the range of [0, 1):
+The minimum and maximum integer values that can be generated are stored in `rng->min` and `rng->max`, respectively. These values can be used with the `rng->get` function to sample uniform numbers in a custom range. For instance, we have provided the function for generating a double-precision floating-point number uniformly distributed in the range [0, 1):
 
 ```c
 double z = rng->get_double(rng->state);           /* for single stream */
 double z = rng->get_double(rng->state_stream[i]); /* for multiple streams */
 ```
 
- And these functions evaluate essentially `z = x / (rng->max + 1)`.
+And these functions evaluate essentially `z = x / (rng->max + 1)`.
+
+Similarly, the following functions are for sampling a uniform double-precision floating-point number in the range (0, 1):
+
+```c
+double z = rng->get_double_pos(rng->state);           /* for single stream */
+double z = rng->get_double_pos(rng->state_stream[i]); /* for multiple streams */
+```
+
+They are equivalent to `z = (x + 1) / (rng->max + 2)`.
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 

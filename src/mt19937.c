@@ -1,35 +1,37 @@
 /*******************************************************************************
 * mt19937.c: this file is part of the randms library.
-* 
+ 
 * randms: C library for generating random numbers with multiple streams.
-*
+
 * Github repository:
-*       https://github.com/cheng-zhao/randms
-*
+        https://github.com/cheng-zhao/randms
+
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
-* 
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-* 
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+
 *******************************************************************************/
 
-#include "randms.h"
+#include "mt19937.h"
 #include "mt19937_jump.h"
+#include <stdlib.h>
+#include <string.h>
 
 /*******************************************************************************
   Implementation of the Mersenne Twister 19937 random number generator.
@@ -43,35 +45,55 @@
   http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
 *******************************************************************************/
 
+/*============================================================================*\
+                            Definitions of constants
+\*============================================================================*/
+
 #ifndef MT19937_N
-#define N               624
+  #define N               624
 #else
-#define N               MT19937_N
+  #define N               MT19937_N
 #endif
+
 #define M               397
 #define K               19937
 #define MA              0x9908b0dfUL
 #define UPPER_MASK(x)   (0x80000000UL & x)      /* most significant w-r bits */
 #define LOWER_MASK(x)   (0x7fffffffUL & x)      /* least significant r bits */
+
+/* Normalisation for sampling a float-point number in the range [0,1). */
 #define NORM            0x1p-32                 /* 2^{-32} */
+/* Normalisation for sampling a float-point number in the range (0,1). */
+#define NORM_POS        0x1.fffffffep-33        /* 1 / (2^{32} + 1) */
+
 #define DEFAULT_SEED    1
 
 #ifndef MT19937_UNROLL
   #define MAGIC(y)      (((y) & 1) ? MA : 0)
 #else
-/* The following trick is taken from
- * https://github.com/cslarsen/mersenne-twister
- * which is distributed under the modified BSD license.
- * It is supposed to work faster with `-ftree-vectorize`, especially for
- * machines with SSE/AVX. */
+/******************************************************************************
+  The following trick is taken from
+  https://github.com/cslarsen/mersenne-twister
+  which is distributed under the modified BSD license.
+  It is supposed to work faster with `-ftree-vectorize`, especially for
+  machines with SSE/AVX.
+******************************************************************************/
   #define MAGIC(y)      (((((int32_t)y) << 31) >> 31) & MA)
 #endif
 
-/* State of the MT19937 generator. */
+/*============================================================================*\
+                            Definition of the state
+\*============================================================================*/
+
 typedef struct {
   uint32_t mt[N];
   int idx;
 } mt19937_state_t;
+
+
+/*============================================================================*\
+                     Functions for random number generation
+\*============================================================================*/
 
 /******************************************************************************
 Function `mt19937_seed`:
@@ -133,7 +155,7 @@ static uint64_t mt19937_get(void *state) {
 
 /******************************************************************************
 Function `mt19937_get_double`:
-  Generate a double-precision floating-point number from the integer.
+  Generate a double-precision floating-point number in the range [0,1).
 Arguments:
   * `state`:    the state for the generator.
 Return:
@@ -143,9 +165,24 @@ static double mt19937_get_double(void *state) {
   return mt19937_get(state) * NORM;
 }
 
+/******************************************************************************
+Function `mt19937_get_double_pos`:
+  Generate a double-precision floating-point number in the range (0,1).
+Arguments:
+  * `state`:    the state for the generator.
+Return:
+  A pseudo-random floating-point number.
+******************************************************************************/
+static double mt19937_get_double_pos(void *state) {
+  return (mt19937_get(state) + 1) * NORM_POS;
+}
+
+
+/*============================================================================*\
+                         Functions for multiple streams
+\*============================================================================*/
 
 /******************************************************************************
-  Functions for jumping ahead with polynomial multiplications.
   ref: https://doi.org/10.1007/978-3-540-85912-3_26
 
   The algorithm for reconstructing the state from a polynomial is taken from
@@ -208,11 +245,10 @@ Arguments:
   * `poly`:     the polynomial.
 ******************************************************************************/
 static void recover_state(mt19937_state_t *s, const uint32_t *poly) {
-  int i;
-  uint32_t y0, y1;
-  for (i = K - N + 1; i <= K; i++) s->mt[i % N] = COEF(poly, i);
-  for (y0 = 0, i = K + 1; i >= N - 1; i--) {
-    y1 = s->mt[i % N] ^ s->mt[(i + M) % N];
+  uint32_t y0 = 0;
+  for (int i = K - N + 1; i <= K; i++) s->mt[i % N] = COEF(poly, i);
+  for (int i = K + 1; i >= N - 1; i--) {
+    uint32_t y1 = s->mt[i % N] ^ s->mt[(i + M) % N];
     if (COEF(poly, i - N + 1))
       y1 = ((y1 ^ MA) << 1) | UINT32_C(1);
     else
@@ -232,22 +268,20 @@ Return:
   The pointer to the evaluated polynomial.
 ******************************************************************************/
 static uint32_t *get_poly(const uint64_t step) {
-  int i, j, init;
-  uint64_t n = step;
-  uint32_t *poly, *pm, *tmp;
-
-  poly = calloc(N * 11, sizeof(uint32_t));
+  uint32_t *poly = calloc(N * 11, sizeof(uint32_t));
   if (!poly) {
     return NULL;
   }
 
-  pm = poly + N;        /* 2N words for the result of multiplication */
-  tmp = pm + (N << 1);  /* temporary array for multiplication */
+  uint32_t *pm = poly + N;      /* 2N words for the result of multiplication */
+  uint32_t *tmp = pm + (N << 1);        /* temporary array for multiplication */
 
   /* split n with base 8 */
+  int i, init;
+  uint64_t n = step;
   i = init = 0;
   while (n) {
-    j = n & 0x07UL;
+    int j = n & 0x07UL;
     if (j) {
       if (!init) {      /* initialise the polynomial */
         memcpy(poly, mt19937_poly[i][j-1], sizeof(uint32_t) * N);
@@ -277,7 +311,6 @@ Arguments:
 ******************************************************************************/
 static void state_forward(mt19937_state_t *out, const mt19937_state_t *in,
     uint32_t *poly) {
-  int i, j;
   uint32_t *pt, *pm, *ph, *tmp;
 
   pt = poly;            /* N words for storing the pre-computed polynomial */
@@ -288,15 +321,15 @@ static void state_forward(mt19937_state_t *out, const mt19937_state_t *in,
   /* Compute the polynomial pm by advancing the generator for 2K steps. */
   copy_state(out, in);
   memset(pm, 0, sizeof(uint32_t) * N * 2);
-  for (i = 2 * K - 1; i >= 0; i--) {
+  for (int i = 2 * K - 1; i >= 0; i--) {
     pm[DIV_NBIT(i)] |= (next_state(out) & 1UL) << MOD_NBIT(i);
   }
 
   /* Compute ph = pt * pm, and extract coefficients from 2K-1 to K. */
   poly_mul_ub(ph, pm, pt, N, tmp);
   memset(pm, 0, sizeof(uint32_t) * N);
-  for (i = 0; i <= K; i++) {
-    j = 2 * K - 1 - i;
+  for (int i = 0; i <= K; i++) {
+    int j = 2 * K - 1 - i;
     pm[DIV_NBIT(i)] |= COEF(ph, j) << MOD_NBIT(i);
   }
 
@@ -320,7 +353,6 @@ static void mt19937_jump_seq(void **state, const void *init_state,
   mt19937_state_t **stat = (mt19937_state_t **) state;
   mt19937_state_t *istat = (mt19937_state_t *) init_state;
   uint32_t *poly;
-  int i;
 
   if (RANDMS_IS_ERROR(*err)) return;
   /* fill state[0] with init_state */
@@ -328,7 +360,7 @@ static void mt19937_jump_seq(void **state, const void *init_state,
 
   /* check of the upper limit should be done before calling this function */
   if (!step) {
-    for (i = 1; i < nstream; i++) copy_state(stat[i], stat[i - 1]);
+    for (unsigned int i = 1; i < nstream; i++) copy_state(stat[i], stat[i - 1]);
     return;
   }
 
@@ -340,7 +372,8 @@ static void mt19937_jump_seq(void **state, const void *init_state,
   }
 
   /* Advance states with the polynomial. */
-  for (i = 1; i < nstream; i++) state_forward(stat[i], stat[i - 1], poly);
+  for (unsigned int i = 1; i < nstream; i++)
+    state_forward(stat[i], stat[i - 1], poly);
 
   free(poly);
 }
@@ -355,7 +388,6 @@ Arguments:
 ******************************************************************************/
 static void mt19937_jump(void *state, const uint64_t step, int *err) {
   mt19937_state_t *stat = (mt19937_state_t *) state;
-  uint32_t *poly;
   if (RANDMS_IS_ERROR(*err)) return;
 
   if (!step) return;
@@ -365,7 +397,7 @@ static void mt19937_jump(void *state, const uint64_t step, int *err) {
   }
 
   /* jump-ahead polynomial */
-  poly = get_poly(step);
+  uint32_t *poly = get_poly(step);
   if (!poly) {
     *err = RANDMS_ERR_MEMORY_JUMP;
     return;
@@ -386,7 +418,6 @@ Arguments:
   * `err`:      an integer for storing the error message.
 ******************************************************************************/
 static void mt19937_jump_all(randms_t *rng, const uint64_t step, int *err) {
-  uint32_t *poly;
   if (RANDMS_IS_ERROR(*err)) return;
 
   if (!step) return;
@@ -396,7 +427,7 @@ static void mt19937_jump_all(randms_t *rng, const uint64_t step, int *err) {
   }
 
   /* jump-ahead polynomial */
-  poly = get_poly(step);
+  uint32_t *poly = get_poly(step);
   if (!poly) {
     *err = RANDMS_ERR_MEMORY_JUMP;
     return;
@@ -463,6 +494,11 @@ static void mt19937_reset_all(randms_t *rng, const uint64_t seed,
   else mt19937_jump_seq(rng->state_stream, stat, rng->nstream, step, err);
 }
 
+
+/*============================================================================*\
+                          Interface for initialisation
+\*============================================================================*/
+
 /******************************************************************************
 Function `mt19937_init`:
   Initialisation of the MT19937 generator, with the universal API.
@@ -519,12 +555,13 @@ randms_t *mt19937_init(const uint64_t seed, const unsigned int nstream,
   }
 
   rng->nstream = nstream;
-  rng->type = RANDMS_MT19937;
+  rng->type = RANDMS_RNG_MT19937;
   rng->min = 0;
   rng->max = 0xffffffffUL;      /* 2^32 - 1 */
 
   rng->get = &mt19937_get;
   rng->get_double = &mt19937_get_double;
+  rng->get_double_pos = &mt19937_get_double_pos;
   rng->reset = &mt19937_reset;
   rng->reset_all = &mt19937_reset_all;
   rng->jump = &mt19937_jump;

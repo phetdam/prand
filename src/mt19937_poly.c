@@ -1,41 +1,42 @@
 /*******************************************************************************
 * mt19937_poly.c: this file is part of the randms library.
-* 
+ 
 * randms: C library for generating random numbers with multiple streams.
-*
+
 * Github repository:
-*       https://github.com/cheng-zhao/randms
-*
+        https://github.com/cheng-zhao/randms
+
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
-* 
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-* 
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+
 *******************************************************************************/
 
-#include "mt19937_jump.h"
+#include "mt19937.h"
+#include <string.h>
 
-/*******************************************************************************
-  Functions for polynomial multiplication with 32-bit words.
-*******************************************************************************/
+/*============================================================================*\
+           Functions for polynomial multiplication with 32-bit words
+\*============================================================================*/
 
 /* Maximum number of words for the expanded multiplication functions. */
-#define EXPD_MUL_THRES  1 //6
+#define EXPD_MUL_THRES  6
 
 /* Lookup table for the grade-school multiplication algorithm. */
 static const uint32_t WORD_MASK[2] = {UINT32_C(0), UINT32_C(0xffffffff)};
@@ -342,9 +343,11 @@ void poly_mul_ub(uint32_t *r, const uint32_t *a, const uint32_t *b,
 }
 
 
-/*******************************************************************************
-  Functions for polynomial modular reduction with 32-bit words.
+/*============================================================================*\
+          Functions for polynomial modular reduction with 32-bit words
+\*============================================================================*/
 
+/*******************************************************************************
   The fast reduction algorithm for sparse polynomials is taken from
   the boost library (https://www.boost.org), with some optimizations for
   the MT19937 minimal polynomial.
@@ -427,15 +430,14 @@ Arguments:
 ******************************************************************************/
 static inline void shifted_add(uint32_t *r, const uint32_t *a,
     const unsigned int n, const unsigned int shift) {
-  unsigned int i;
   if (shift == 0) {
-    for (i = 0; i < n; i++) r[i] ^= a[i];
+    for (unsigned int i = 0; i < n; i++) r[i] ^= a[i];
     return;
   }
 
   const unsigned int right = WORD_SIZE - shift;
   uint32_t prev = 0;
-  for (i = 0; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++) {
     r[i] ^= (a[i] << shift) | (prev >> right);
     prev = a[i];
   }

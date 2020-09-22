@@ -1,43 +1,46 @@
 /*******************************************************************************
 * mrg32k3a.c: this file is part of the randms library.
-* 
+ 
 * randms: C library for generating random numbers with multiple streams.
-*
+
 * Github repository:
-*       https://github.com/cheng-zhao/randms
-*
+        https://github.com/cheng-zhao/randms
+
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
-* 
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-* 
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+
 *******************************************************************************/
 
-#include "randms.h"
+#include "mrg32k3a.h"
 #include "mrg32k3a_jump.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
 /*******************************************************************************
   Implementation of the MRG32k3a random number generator.
   ref: https://doi.org/10.1287/opre.47.1.159
-
-  The initialisation with a seed is performed with the macro `RANDMS_LCG`
-  defined in "randms.h".
 *******************************************************************************/
+
+/*============================================================================*\
+                            Definitions of constants
+\*============================================================================*/
 
 #define m1              4294967087LL            /* 2^32 - 209 */
 #define m2              4294944443LL            /* 2^32 - 22853 */
@@ -50,17 +53,35 @@
 #define add1            3482050076509336LL      /* m1 * a13 */
 #define add2            5886603609186927LL      /* m2 * a23 */
 
-/* Normalisation equivalent to 2.328306549295727688e-10, i.e. 1 / (1 + m1),
- * see https://github.com/vigna/MRG32k3a */
-#define norm            0x1.000000d00000bp-32
+/* Normalisation for sampling a float-point number in the range [0,1). */
+#define norm            0x1.000000d00000bp-32   /* 1 / (1 + m1) */
+/* Normalisation for sampling a float-point number in the range (0,1). */
+#define norm_pos        0x1.000000cf0000ap-32   /* 1 / (2 + m1) */
+
+
+/*============================================================================*\
+                         Macros for the initialisation
+\*============================================================================*/
+
+/* LCG for initialising the states. */
+#define RANDMS_LCG(n) ((69069 * n + 1) & 0xffffffffUL)
 
 #define DEFAULT_SEED    1
 
-/* State of the MRG32k3a generator. */
+
+/*============================================================================*\
+                            Definition of the state
+\*============================================================================*/
+
 typedef struct {
   int64_t s10, s11, s12;
   int64_t s20, s21, s22;
 } mrg32k3a_state_t;
+
+
+/*============================================================================*\
+                     Functions for random number generation
+\*============================================================================*/
 
 /******************************************************************************
 Function `mrg32k3a_seed`:
@@ -99,16 +120,15 @@ Return:
 ******************************************************************************/
 static uint64_t mrg32k3a_get(void *state) {
   mrg32k3a_state_t *stat = (mrg32k3a_state_t *) state;
-  int64_t p1, p2;
 
   /* Component 1 */
-  p1 = (a12 * stat->s11 + a13 * stat->s10 + add1) % m1;
+  int64_t p1 = (a12 * stat->s11 + a13 * stat->s10 + add1) % m1;
   stat->s10 = stat->s11;
   stat->s11 = stat->s12;
   stat->s12 = p1;
 
   /* Component 2 */
-  p2 = (a21 * stat->s22 + a23 * stat->s20 + add2) % m2;
+  int64_t p2 = (a21 * stat->s22 + a23 * stat->s20 + add2) % m2;
   stat->s20 = stat->s21;
   stat->s21 = stat->s22;
   stat->s22 = p2;
@@ -120,7 +140,7 @@ static uint64_t mrg32k3a_get(void *state) {
 
 /******************************************************************************
 Function `mrg32k3a_get_double`:
-  Generate a double-precision floating-point number from the integer.
+  Generate a double-precision floating-point number in the range [0,1).
 Arguments:
   * `state`:    the state for the generator.
 Return:
@@ -130,12 +150,26 @@ static double mrg32k3a_get_double(void *state) {
   return mrg32k3a_get(state) * norm;
 }
 
+/******************************************************************************
+Function `mrg32k3a_get_double_pos`:
+  Generate a double-precision floating-point number in the range (0,1).
+Arguments:
+  * `state`:    the state for the generator.
+Return:
+  A pseudo-random floating-point number.
+******************************************************************************/
+static double mrg32k3a_get_double_pos(void *state) {
+  return (mrg32k3a_get(state) + 1) * norm_pos;
+}
+
+
+/*============================================================================*\
+                         Functions for multiple streams
+\*============================================================================*/
 
 /******************************************************************************
-  Functions for jumping ahead with pre-computed matrices.
   ref: https://doi.org/10.1016/B978-0-12-384988-5.00016-4
 ******************************************************************************/
-
 
 /******************************************************************************
 Function `matrix_dot`:
@@ -181,16 +215,15 @@ Arguments:
   * `step`:     the number of steps to be skipped.
 ******************************************************************************/
 static void matrix_pow(uint64_t A1[9], uint64_t A2[9], const uint64_t step) {
-  int i, j, k;
-  int init = 0;
   uint64_t n = step;
 
-  i = 0;
+  int i = 0;
+  bool init = false;
   while (n) {
-    j = n & 0x07UL;
+    int j = n & 0x07UL;
     if (j) {
       if (!init) {      /* Initialise A1 and A2. */
-        for (k = 0; k < 9; k++) {
+        for (int k = 0; k < 9; k++) {
           A1[k] = A1gj8i[i][j-1][k];
           A2[k] = A2gj8i[i][j-1][k];
           init = 1;
@@ -206,7 +239,7 @@ static void matrix_pow(uint64_t A1[9], uint64_t A2[9], const uint64_t step) {
   }
 
   if (!init) {          /* step == 0 */
-    for (k = 0; k < 9; k++) {
+    for (int k = 0; k < 9; k++) {
       A1[k] = A1gj8i[0][0][k];
       A2[k] = A2gj8i[0][0][k];
     }
@@ -273,7 +306,6 @@ static void mrg32k3a_jump_seq(void **state, const void *init_state,
   mrg32k3a_state_t **stat = (mrg32k3a_state_t **) state;
   mrg32k3a_state_t *istat = (mrg32k3a_state_t *) init_state;
   uint64_t A1[9], A2[9];
-  int i;
 
   if (RANDMS_IS_ERROR(*err)) return;
   /* fill state[0] with init_state */
@@ -281,7 +313,7 @@ static void mrg32k3a_jump_seq(void **state, const void *init_state,
 
   /* check of the upper limit should be done before calling this function */
   if (!step) {
-    for (i = 1; i < nstream; i++) copy_state(stat[i], stat[i - 1]);
+    for (unsigned int i = 1; i < nstream; i++) copy_state(stat[i], stat[i - 1]);
     return;
   }
 
@@ -289,7 +321,8 @@ static void mrg32k3a_jump_seq(void **state, const void *init_state,
   matrix_pow(A1, A2, step);
 
   /* Advance states with the matrices. */
-  for (i = 1; i < nstream; i++) state_forward(stat[i], stat[i - 1], A1, A2);
+  for (unsigned int i = 1; i < nstream; i++)
+    state_forward(stat[i], stat[i - 1], A1, A2);
 }
 
 /******************************************************************************
@@ -398,6 +431,11 @@ static void mrg32k3a_reset_all(randms_t *rng, const uint64_t seed,
   else mrg32k3a_jump_seq(rng->state_stream, stat, rng->nstream, step, err);
 }
 
+
+/*============================================================================*\
+                          Interface for initialisation
+\*============================================================================*/
+
 /******************************************************************************
 Function `mrg32k3a_init`:
   Initialisation of the MRG32k3a generator, with the universal API.
@@ -454,12 +492,13 @@ randms_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
   }
 
   rng->nstream = nstream;
-  rng->type = RANDMS_MRG32K3A;
+  rng->type = RANDMS_RNG_MRG32K3A;
   rng->min = 0;
   rng->max = m1;
 
   rng->get = &mrg32k3a_get;
   rng->get_double = &mrg32k3a_get_double;
+  rng->get_double_pos = &mrg32k3a_get_double_pos;
   rng->reset = &mrg32k3a_reset;
   rng->reset_all = &mrg32k3a_reset_all;
   rng->jump = &mrg32k3a_jump;

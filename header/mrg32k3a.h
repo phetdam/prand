@@ -1,5 +1,5 @@
 /*******************************************************************************
-* multistream.c: this file is an example for the usage of the randms library.
+* mrg32k3a_jump.h: this file is part of the randms library.
  
 * randms: C library for generating random numbers with multiple streams.
 
@@ -28,54 +28,27 @@
 
 *******************************************************************************/
 
-#include <stdio.h>
-#include <inttypes.h>
+#ifndef __MRG32K3A_H__
+#define __MRG32K3A_H__
+
 #include "randms.h"
 
-#define NUM_STREAM      5
-#define NUM_STEP        100000
-#define RNG_TYPE        RANDMS_RNG_MT19937
-#define SEED            1
+/*============================================================================*\
+                            Initialisation function
+\*============================================================================*/
 
-#define CHECK_ERROR(err)                        \
-  if (RANDMS_IS_ERROR(err)) {                   \
-    printf("Error: %s\n", randms_errmsg(err));  \
-    return err;                                 \
-  }
+/******************************************************************************
+Function `mrg32k3a_init`:
+  Initialisation of the MRG32k3a generator, with the universal API.
+Arguments:
+  * `seed`:     an integer for initalisation the generator;
+  * `nstream`:  total number of streams;
+  * `step`:     step size for jumping ahead;
+  * `err`:      an integer for storing the error message.
+Return:
+  A universal instance of the random number generator.
+******************************************************************************/
+randms_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
+    const uint64_t step, int *err);
 
-int main(void) {
-  int err = 0;
-  double z, max = 0;
-  const uint64_t step = NUM_STEP;
-  const int nstream = NUM_STREAM;
-
-  randms_t *rng;
-
-  /* single stream */
-  rng = randms_init(RNG_TYPE, SEED, 1, 0, &err);
-  CHECK_ERROR(err);
-  printf("-> Single stream:\n");
-  for (int i = 0; i < nstream; i++) {
-    printf("%" PRIu64 "-th number: %lf\n",
-        i * step, rng->get_double(rng->state));
-    for (uint64_t j = 1; j < step; j++) {
-      z = rng->get_double(rng->state);
-      if (max < z) max = z;
-    }
-  }
-  randms_destroy(rng);
-
-  /* multiple streams */
-  rng = randms_init(RNG_TYPE, SEED, nstream, step, &err);
-  CHECK_ERROR(err);
-  printf("-> %d streams with step size %" PRIu64 ":\n", nstream, step);
-
-  for (int i = 0; i < nstream; i++) {
-    printf("starting number of %d-th stream: %lf\n",
-        i, rng->get_double(rng->state_stream[i]));
-  }
-  randms_destroy(rng);
-
-  return 0;
-}
-
+#endif
