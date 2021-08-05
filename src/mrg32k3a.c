@@ -1,10 +1,10 @@
 /*******************************************************************************
-* mrg32k3a.c: this file is part of the randms library.
+* mrg32k3a.c: this file is part of the prand library.
  
-* randms: C library for generating random numbers with multiple streams.
+* prand: parallel random number generator.
 
 * Github repository:
-        https://github.com/cheng-zhao/randms
+        https://github.com/cheng-zhao/prand
 
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
  
@@ -64,7 +64,7 @@
 \*============================================================================*/
 
 /* LCG for initialising the states. */
-#define RANDMS_LCG(n) ((69069 * n + 1) & 0xffffffffUL)
+#define PRAND_LCG(n) ((69069 * n + 1) & 0xffffffffUL)
 
 #define DEFAULT_SEED    1
 
@@ -95,18 +95,18 @@ static void mrg32k3a_seed(void *state, uint64_t seed) {
 
   /* Initialise states with LCG.
    * The validation of the seed is done in `mrg32k3a_init`. */
-  seed = RANDMS_LCG(seed);
+  seed = PRAND_LCG(seed);
   stat->s10 = seed % m1;
-  seed = RANDMS_LCG(seed);
+  seed = PRAND_LCG(seed);
   stat->s11 = seed % m1;
-  seed = RANDMS_LCG(seed);
+  seed = PRAND_LCG(seed);
   stat->s12 = seed % m1;
 
-  seed = RANDMS_LCG(seed);
+  seed = PRAND_LCG(seed);
   stat->s20 = seed % m2;
-  seed = RANDMS_LCG(seed);
+  seed = PRAND_LCG(seed);
   stat->s21 = seed % m2;
-  seed = RANDMS_LCG(seed);
+  seed = PRAND_LCG(seed);
   stat->s22 = seed % m2;
 }
 
@@ -307,7 +307,7 @@ static void mrg32k3a_jump_seq(void **state, const void *init_state,
   mrg32k3a_state_t *istat = (mrg32k3a_state_t *) init_state;
   uint64_t A1[9], A2[9];
 
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
   /* fill state[0] with init_state */
   copy_state(stat[0], istat);
 
@@ -336,11 +336,11 @@ Arguments:
 static void mrg32k3a_jump(void *state, const uint64_t step, int *err) {
   mrg32k3a_state_t *stat = (mrg32k3a_state_t *) state;
   uint64_t A1[9], A2[9];
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (!step) return;
   else if (step > MRG32K3A_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return;
   }
 
@@ -359,13 +359,13 @@ Arguments:
   * `step`:     step size for jumping ahead;
   * `err`:      an integer for storing the error message.
 ******************************************************************************/
-static void mrg32k3a_jump_all(randms_t *rng, const uint64_t step, int *err) {
+static void mrg32k3a_jump_all(prand_t *rng, const uint64_t step, int *err) {
   uint64_t A1[9], A2[9];
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (!step) return;
   else if (step > MRG32K3A_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return;
   }
 
@@ -390,10 +390,10 @@ Arguments:
 static void mrg32k3a_reset(void *state, const uint64_t seed,
     const uint64_t step, int *err) {
   mrg32k3a_state_t *stat = (mrg32k3a_state_t *) state;
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (seed == 0) {
-    *err = RANDMS_WARN_SEED;
+    *err = PRAND_WARN_SEED;
     mrg32k3a_seed(stat, DEFAULT_SEED);
   }
   else mrg32k3a_seed(stat, seed);
@@ -410,20 +410,20 @@ Arguments:
   * `step`:     step size for jumping ahead;
   * `err`:      an integer for storing the error message.
 ******************************************************************************/
-static void mrg32k3a_reset_all(randms_t *rng, const uint64_t seed,
+static void mrg32k3a_reset_all(prand_t *rng, const uint64_t seed,
     const uint64_t step, int *err) {
   mrg32k3a_state_t *stat = (mrg32k3a_state_t *) (rng->state);
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (seed == 0) {
-    *err = RANDMS_WARN_SEED;
+    *err = PRAND_WARN_SEED;
     mrg32k3a_seed(stat, DEFAULT_SEED);
   }
   else mrg32k3a_seed(stat, seed);
 
   if (!step) return;
   else if (step > MRG32K3A_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return;
   }
 
@@ -447,52 +447,41 @@ Arguments:
 Return:
   A universal instance of the random number generator.
 ******************************************************************************/
-randms_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
+prand_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
     const uint64_t step, int *err) {
   /* `step` should not be larger than the pre-computed length. */
   if (step > MRG32K3A_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return NULL;
   }
 
-  randms_t *rng = malloc(sizeof(randms_t));
+  prand_t *rng = malloc(sizeof(prand_t));
   if (!rng) {
-    *err = RANDMS_ERR_MEMORY;
+    *err = PRAND_ERR_MEMORY;
     return NULL;
   }
 
-  if (nstream <= 1) {   /* single stream */
-    rng->state = malloc(sizeof(mrg32k3a_state_t));
-    if (!rng->state) {
-      free(rng);
-      *err = RANDMS_ERR_MEMORY;
-      return NULL;
-    }
-    rng->state_stream = NULL;
-  }
-  else {                /* multiple streams */
-    rng->state_stream = malloc(sizeof(mrg32k3a_state_t *) * nstream);
-    if (!rng->state_stream) {
-      free(rng);
-      *err = RANDMS_ERR_MEMORY;
-      return NULL;
-    }
-
-    mrg32k3a_state_t *states = malloc(sizeof(mrg32k3a_state_t) * nstream);
-    if (!states) {
-      free(rng);
-      free(rng->state_stream);
-      *err = RANDMS_ERR_MEMORY;
-      return NULL;
-    }
-    for (unsigned int i = 0; i < nstream; i++)
-      rng->state_stream[i] = states + i;
-
-    rng->state = rng->state_stream[0];
+  unsigned int numstr = (nstream == 0) ? 1 : nstream;
+  rng->state_stream = malloc(sizeof(mrg32k3a_state_t *) * numstr);
+  if (!rng->state_stream) {
+    free(rng);
+    *err = PRAND_ERR_MEMORY;
+    return NULL;
   }
 
-  rng->nstream = nstream;
-  rng->type = RANDMS_RNG_MRG32K3A;
+  mrg32k3a_state_t *states = malloc(sizeof(mrg32k3a_state_t) * numstr);
+  if (!states) {
+    free(rng);
+    free(rng->state_stream);
+    *err = PRAND_ERR_MEMORY;
+    return NULL;
+  }
+  for (unsigned int i = 0; i < numstr; i++)
+    rng->state_stream[i] = states + i;
+
+  rng->state = rng->state_stream[0];
+  rng->nstream = numstr;
+  rng->type = PRAND_RNG_MRG32K3A;
   rng->min = 0;
   rng->max = m1;
 
@@ -505,12 +494,12 @@ randms_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
   rng->jump_all = &mrg32k3a_jump_all;
 
   if (seed == 0) {
-    *err = RANDMS_WARN_SEED;
+    *err = PRAND_WARN_SEED;
     mrg32k3a_seed(rng->state, DEFAULT_SEED);
   }
   else mrg32k3a_seed(rng->state, seed);
 
-  if (nstream <= 1)
+  if (nstream == 0)
     mrg32k3a_jump(rng->state, step, err);
   else
     mrg32k3a_jump_seq(rng->state_stream, rng->state, nstream, step, err);

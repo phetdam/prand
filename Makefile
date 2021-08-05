@@ -3,7 +3,7 @@ CFLAGS = -std=c99 -O3 -Wall
 
 # Path in which the header and library files are installed
 PREFIX = .
-TARGET = librandms.a    # librandms.so for the dynamic library
+TARGET = libprand.a    # libprand.so for the dynamic library
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 INC_DIR = $(ROOT_DIR)/header
@@ -23,10 +23,10 @@ endif
 
 all: $(TARGET)
 
-librandms.a: $(OBJS)
+libprand.a: $(OBJS)
 	ar rcs $(SRC_DIR)/$@ $^
 
-librandms.so: $(OBJS)
+libprand.so: $(OBJS)
 	$(CC) $(CFLAGS) -shared -o $(SRC_DIR)/$@ $^
 
 $(SRC_DIR)/%.o: $(SRC_DIR)/%.c
@@ -39,4 +39,4 @@ install: $(TARGET)
 	install -d $(PREFIX)/lib/
 	install -m $(TARGET_MOD) $(SRC_DIR)/$(TARGET) $(PREFIX)/lib/
 	install -d $(PREFIX)/include/
-	install -m 644 $(INC_DIR)/randms.h $(PREFIX)/include/
+	install -m 644 $(INC_DIR)/prand.h $(PREFIX)/include/

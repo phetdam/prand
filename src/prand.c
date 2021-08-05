@@ -1,10 +1,10 @@
 /*******************************************************************************
-* randms.c: this file is part of the randms library.
+* prand.c: this file is part of the prand library.
  
-* randms: C library for generating random numbers with multiple streams.
+* prand: parallel random number generator.
 
 * Github repository:
-        https://github.com/cheng-zhao/randms
+        https://github.com/cheng-zhao/prand
 
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
  
@@ -28,13 +28,13 @@
 
 *******************************************************************************/
 
-#include "randms.h"
+#include "prand.h"
 #include "mrg32k3a.h"
 #include "mt19937.h"
 #include <stdlib.h>
 
 /******************************************************************************
-Function `randms_init`:
+Function `prand_init`:
   Initialisation of the interface for the selected random number generator.
 Arguments:
   * `type`:     the ID of the pre-defined random number generator;
@@ -45,41 +45,41 @@ Arguments:
 Return:
   A universal interface of the random number generator.
 ******************************************************************************/
-randms_t *randms_init(const randms_rng_enum type, const uint64_t seed,
+prand_t *prand_init(const prand_rng_enum type, const uint64_t seed,
     const unsigned int nstream, const uint64_t step, int *err) {
   *err = 0;
   switch (type) {
-    case RANDMS_RNG_MRG32K3A:
+    case PRAND_RNG_MRG32K3A:
       return mrg32k3a_init(seed, nstream, step, err);
-    case RANDMS_RNG_MT19937:
+    case PRAND_RNG_MT19937:
       return mt19937_init(seed, nstream, step, err);
     default:
-      *err = RANDMS_ERR_UNDEF_RNG;
+      *err = PRAND_ERR_UNDEF_RNG;
       return NULL;
   }
 }
 
 /******************************************************************************
-Function `randms_errmsg`:
+Function `prand_errmsg`:
   Produce error message for a given error code.
 Arguments:
   * `err`:      the error code
 Return:
   A string with error message.
 ******************************************************************************/
-char *randms_errmsg(const int err) {
+char *prand_errmsg(const int err) {
   switch (err) {
     case 0:
       return "no error";
-    case RANDMS_ERR_MEMORY:
+    case PRAND_ERR_MEMORY:
       return "failed to allocate memory for the random number generator";
-    case RANDMS_ERR_MEMORY_JUMP:
+    case PRAND_ERR_MEMORY_JUMP:
       return "failed to allocate memory for jumping ahead";
-    case RANDMS_ERR_STEP:
+    case PRAND_ERR_STEP:
       return "the step size for jumping ahead is too large";
-    case RANDMS_ERR_UNDEF_RNG:
+    case PRAND_ERR_UNDEF_RNG:
       return "the type of the random number generator is undefined";
-    case RANDMS_WARN_SEED:
+    case PRAND_WARN_SEED:
       return "invalid seed value";
     default:
       return "undefined error code";
@@ -87,14 +87,14 @@ char *randms_errmsg(const int err) {
 }
 
 /******************************************************************************
-Function `randms_destroy`:
+Function `prand_destroy`:
   Release memory allocated for the random number generator interface.
 Arguments:
   * `rng`:      the instance of the random number generator.
 ******************************************************************************/
-void randms_destroy(randms_t *rng) {
+void prand_destroy(prand_t *rng) {
   free(rng->state);
-  if (rng->nstream > 1) free(rng->state_stream);
+  free(rng->state_stream);
   free(rng);
 }
 

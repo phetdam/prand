@@ -1,10 +1,10 @@
 /*******************************************************************************
-* mt19937.c: this file is part of the randms library.
+* mt19937.c: this file is part of the prand library.
  
-* randms: C library for generating random numbers with multiple streams.
+* prand: parallel random number generator.
 
 * Github repository:
-        https://github.com/cheng-zhao/randms
+        https://github.com/cheng-zhao/prand
 
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
  
@@ -354,7 +354,7 @@ static void mt19937_jump_seq(void **state, const void *init_state,
   mt19937_state_t *istat = (mt19937_state_t *) init_state;
   uint32_t *poly;
 
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
   /* fill state[0] with init_state */
   copy_state(stat[0], istat);
 
@@ -367,7 +367,7 @@ static void mt19937_jump_seq(void **state, const void *init_state,
   /* jump-ahead polynomial */
   poly = get_poly(step);
   if (!poly) {
-    *err = RANDMS_ERR_MEMORY_JUMP;
+    *err = PRAND_ERR_MEMORY_JUMP;
     return;
   }
 
@@ -388,18 +388,18 @@ Arguments:
 ******************************************************************************/
 static void mt19937_jump(void *state, const uint64_t step, int *err) {
   mt19937_state_t *stat = (mt19937_state_t *) state;
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (!step) return;
   else if (step > MT19937_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return;
   }
 
   /* jump-ahead polynomial */
   uint32_t *poly = get_poly(step);
   if (!poly) {
-    *err = RANDMS_ERR_MEMORY_JUMP;
+    *err = PRAND_ERR_MEMORY_JUMP;
     return;
   }
 
@@ -417,19 +417,19 @@ Arguments:
   * `step`:     step size for jumping ahead;
   * `err`:      an integer for storing the error message.
 ******************************************************************************/
-static void mt19937_jump_all(randms_t *rng, const uint64_t step, int *err) {
-  if (RANDMS_IS_ERROR(*err)) return;
+static void mt19937_jump_all(prand_t *rng, const uint64_t step, int *err) {
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (!step) return;
   else if (step > MT19937_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return;
   }
 
   /* jump-ahead polynomial */
   uint32_t *poly = get_poly(step);
   if (!poly) {
-    *err = RANDMS_ERR_MEMORY_JUMP;
+    *err = PRAND_ERR_MEMORY_JUMP;
     return;
   }
 
@@ -453,10 +453,10 @@ Arguments:
 static void mt19937_reset(void *state, const uint64_t seed,
     const uint64_t step, int *err) {
   mt19937_state_t *stat = (mt19937_state_t *) state;
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (seed == 0) {
-    *err = RANDMS_WARN_SEED;
+    *err = PRAND_WARN_SEED;
     mt19937_seed(stat, DEFAULT_SEED);
   }
   else mt19937_seed(stat, seed);
@@ -473,20 +473,20 @@ Arguments:
   * `step`:     step size for jumping ahead;
   * `err`:      an integer for storing the error message.
 ******************************************************************************/
-static void mt19937_reset_all(randms_t *rng, const uint64_t seed,
+static void mt19937_reset_all(prand_t *rng, const uint64_t seed,
     const uint64_t step, int *err) {
   mt19937_state_t *stat = (mt19937_state_t *) (rng->state);
-  if (RANDMS_IS_ERROR(*err)) return;
+  if (PRAND_IS_ERROR(*err)) return;
 
   if (seed == 0) {
-    *err = RANDMS_WARN_SEED;
+    *err = PRAND_WARN_SEED;
     mt19937_seed(stat, DEFAULT_SEED);
   }
   else mt19937_seed(stat, seed);
 
   if (!step) return;
   else if (step > MT19937_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return;
   }
 
@@ -510,52 +510,41 @@ Arguments:
 Return:
   A universal instance of the random number generator.
 ******************************************************************************/
-randms_t *mt19937_init(const uint64_t seed, const unsigned int nstream,
+prand_t *mt19937_init(const uint64_t seed, const unsigned int nstream,
     const uint64_t step, int *err) {
   /* `step` should not be larger than the pre-computed length. */
   if (step > MT19937_MAX_STEP) {
-    *err = RANDMS_ERR_STEP;
+    *err = PRAND_ERR_STEP;
     return NULL;
   }
 
-  randms_t *rng = malloc(sizeof(randms_t));
+  prand_t *rng = malloc(sizeof(prand_t));
   if (!rng) {
-    *err = RANDMS_ERR_MEMORY;
+    *err = PRAND_ERR_MEMORY;
     return NULL;
   }
 
-  if (nstream <= 1) {   /* single stream */
-    rng->state = malloc(sizeof(mt19937_state_t));
-    if (!rng->state) {
-      free(rng);
-      *err = RANDMS_ERR_MEMORY;
-      return NULL;
-    }
-    rng->state_stream = NULL;
-  }
-  else {                /* multiple streams */
-    rng->state_stream = malloc(sizeof(mt19937_state_t *) * nstream);
-    if (!rng->state_stream) {
-      free(rng);
-      *err = RANDMS_ERR_MEMORY;
-      return NULL;
-    }
-
-    mt19937_state_t *states =  malloc(sizeof(mt19937_state_t) * nstream);
-    if (!states) {
-      free(rng);
-      free(rng->state_stream);
-      *err = RANDMS_ERR_MEMORY;
-      return NULL;
-    }
-    for (unsigned int i = 0; i < nstream; i++)
-      rng->state_stream[i] = states + i;
-
-    rng->state = rng->state_stream[0];
+  unsigned int numstr = (nstream == 0) ? 1 : nstream;
+  rng->state_stream = malloc(sizeof(mt19937_state_t *) * numstr);
+  if (!rng->state_stream) {
+    free(rng);
+    *err = PRAND_ERR_MEMORY;
+    return NULL;
   }
 
-  rng->nstream = nstream;
-  rng->type = RANDMS_RNG_MT19937;
+  mt19937_state_t *states =  malloc(sizeof(mt19937_state_t) * numstr);
+  if (!states) {
+    free(rng);
+    free(rng->state_stream);
+    *err = PRAND_ERR_MEMORY;
+    return NULL;
+  }
+  for (unsigned int i = 0; i < numstr; i++)
+    rng->state_stream[i] = states + i;
+
+  rng->state = rng->state_stream[0];
+  rng->nstream = numstr;
+  rng->type = PRAND_RNG_MT19937;
   rng->min = 0;
   rng->max = 0xffffffffUL;      /* 2^32 - 1 */
 
@@ -568,7 +557,7 @@ randms_t *mt19937_init(const uint64_t seed, const unsigned int nstream,
   rng->jump_all = &mt19937_jump_all;
 
   if (seed == 0) {
-    *err = RANDMS_WARN_SEED;
+    *err = PRAND_WARN_SEED;
     mt19937_seed(rng->state, DEFAULT_SEED);
   }
   else mt19937_seed(rng->state, seed);

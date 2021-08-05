@@ -1,10 +1,10 @@
 /*******************************************************************************
-* mrg32k3a.h: this file is part of the randms library.
+* mrg32k3a.h: this file is part of the prand library.
  
-* randms: C library for generating random numbers with multiple streams.
+* prand: parallel random number generator.
 
 * Github repository:
-        https://github.com/cheng-zhao/randms
+        https://github.com/cheng-zhao/prand
 
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
  
@@ -31,7 +31,7 @@
 #ifndef __MRG32K3A_H__
 #define __MRG32K3A_H__
 
-#include "randms.h"
+#include "prand.h"
 
 /*============================================================================*\
                             Initialisation function
@@ -48,7 +48,7 @@ Arguments:
 Return:
   A universal instance of the random number generator.
 ******************************************************************************/
-randms_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
+prand_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
     const uint64_t step, int *err);
 
 #endif

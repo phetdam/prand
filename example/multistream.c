@@ -1,10 +1,10 @@
 /*******************************************************************************
-* multistream.c: this file is an example for the usage of the randms library.
+* multistream.c: this file is an example for the usage of the prand library.
  
-* randms: C library for generating random numbers with multiple streams.
+* prand: C library for generating random numbers with multiple streams.
 
 * Github repository:
-        https://github.com/cheng-zhao/randms
+        https://github.com/cheng-zhao/prand
 
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
  
@@ -30,16 +30,16 @@
 
 #include <stdio.h>
 #include <inttypes.h>
-#include "randms.h"
+#include "prand.h"
 
 #define NUM_STREAM      5
 #define NUM_STEP        100000
-#define RNG_TYPE        RANDMS_RNG_MT19937
+#define RNG_TYPE        PRAND_RNG_MT19937
 #define SEED            1
 
 #define CHECK_ERROR(err)                        \
-  if (RANDMS_IS_ERROR(err)) {                   \
-    printf("Error: %s\n", randms_errmsg(err));  \
+  if (PRAND_IS_ERROR(err)) {                   \
+    printf("Error: %s\n", prand_errmsg(err));  \
     return err;                                 \
   }
 
@@ -49,10 +49,10 @@ int main(void) {
   const uint64_t step = NUM_STEP;
   const int nstream = NUM_STREAM;
 
-  randms_t *rng;
+  prand_t *rng;
 
   /* single stream */
-  rng = randms_init(RNG_TYPE, SEED, 1, 0, &err);
+  rng = prand_init(RNG_TYPE, SEED, 0, 0, &err);
   CHECK_ERROR(err);
   printf("-> Single stream:\n");
   for (int i = 0; i < nstream; i++) {
@@ -63,10 +63,10 @@ int main(void) {
       if (max < z) max = z;
     }
   }
-  randms_destroy(rng);
+  prand_destroy(rng);
 
   /* multiple streams */
-  rng = randms_init(RNG_TYPE, SEED, nstream, step, &err);
+  rng = prand_init(RNG_TYPE, SEED, nstream, step, &err);
   CHECK_ERROR(err);
   printf("-> %d streams with step size %" PRIu64 ":\n", nstream, step);
 
@@ -74,7 +74,7 @@ int main(void) {
     printf("starting number of %d-th stream: %lf\n",
         i, rng->get_double(rng->state_stream[i]));
   }
-  randms_destroy(rng);
+  prand_destroy(rng);
 
   return 0;
 }

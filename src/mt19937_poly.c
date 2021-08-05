@@ -1,10 +1,10 @@
 /*******************************************************************************
-* mt19937_poly.c: this file is part of the randms library.
+* mt19937_poly.c: this file is part of the prand library.
  
-* randms: C library for generating random numbers with multiple streams.
+* prand: parallel random number generator.
 
 * Github repository:
-        https://github.com/cheng-zhao/randms
+        https://github.com/cheng-zhao/prand
 
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
  

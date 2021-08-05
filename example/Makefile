@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -std=c99 -O3 -Wall
 INCL = -I../include
-LIBS = -L../lib -lrandms
+LIBS = -L../lib -lprand
 SRCS = multistream.c
 EXEC = multistream
 

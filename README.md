@@ -1,7 +1,7 @@
 
-# randms
+# prand: parallel random number generator
 
-![GitHub](https://img.shields.io/github/license/cheng-zhao/randms.svg)
+![GitHub](https://img.shields.io/github/license/cheng-zhao/prand.svg)
 
 ## Table of Contents
 
@@ -40,9 +40,9 @@ $ make
 $ make install
 ```
 
-By default a static library `librandms.a` is created in the `lib` subfolder, and a header file `randms.h` is copied to the `include` subfolder, of the current working directory. One can change the `PREFIX` entry in [Makefile](Makefile#L5) to customise the installation path of the library.
+By default a static library `libprand.a` is created in the `lib` subfolder, and a header file `prand.h` is copied to the `include` subfolder, of the current working directory. One can change the `PREFIX` entry in [Makefile](Makefile#L5) to customise the installation path of the library.
 
-To link the library with a program, one has to add the `-lrandms` flag for the compilation. And if this library is not installed in the default path for system libraries, the `-I` and `-L` options are also necessary for specifying the path to the header and library files. An example of the [Makefile](example/Makefile) for linking randms is provided in the [example](example) folder.
+To link the library with a program, one has to add the `-lprand` flag for the compilation. And if this library is not installed in the default path for system libraries, the `-I` and `-L` options are also necessary for specifying the path to the header and library files. An example of the [Makefile](example/Makefile) for linking prand is provided in the [example](example) folder.
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
@@ -53,7 +53,7 @@ To link the library with a program, one has to add the `-lrandms` flag for the c
 Before calling any random number generation functions, the interface of the random number generator has to be initialised by
 
 ```c
-randms_t *randms_init(const randms_rng_enum type, const uint64_t seed,
+prand_t *prand_init(const prand_rng_enum type, const uint64_t seed,
     const unsigned int nstream, const uint64_t step, int *err)
 ```
 
@@ -70,16 +70,16 @@ The implemented random number generation algorithms, as well as the correspondin
 
 | Algorithm                                       | Enumerator for `type` | `seed` | Maximum `step`[*](#foot1) |
 |-------------------------------------------------|-----------------------|--------|---------------------------|
-| MRG32k3a<sup>[\[1\]](#ref1)</sup>               | `RANDMS_RNG_MRG32K3A` | 32-bit | 2<sup>63</sup>&minus;1    |
-| Mersenne Twister 19937<sup>[\[2\]](#ref2)</sup> | `RANDMS_RNG_MT19937`  | 32-bit | 2<sup>63</sup>&minus;1    |
+| MRG32k3a<sup>[\[1\]](#ref1)</sup>               | `PRAND_RNG_MRG32K3A` | 32-bit | 2<sup>63</sup>&minus;1    |
+| Mersenne Twister 19937<sup>[\[2\]](#ref2)</sup> | `PRAND_RNG_MT19937`  | 32-bit | 2<sup>63</sup>&minus;1    |
 
 <sub><span id="foot1">*</span> This limitation is only for a single jump ahead operation. The total skipped length can be larger than this value if jumping ahead for multiple times (see [Revising random states](#revising-random-states)).</sub>
 
-All the random number generation routines rely on the interface created by this `randms_init` function. As an example, the interface can be initialised as follows
+All the random number generation routines rely on the interface created by this `prand_init` function. As an example, the interface can be initialised as follows
 
 ```c
 int err = 0;
-randms_t *rng = randms_init(RANDMS_RNG_MRG32K3A, 1, 8, 10000, &err);
+prand_t *rng = prand_init(PRAND_RNG_MRG32K3A, 1, 8, 10000, &err);
 ```
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
@@ -150,17 +150,17 @@ Here, `rng->reset` resets the status of a stream indicated by `state`, with a ju
 Once the random number generator is not needed anymore, the interface has to be deconstructed to release the allocated memory, by simply calling
 
 ```c
-void randms_destroy(randms_t *rng);
+void prand_destroy(prand_t *rng);
 ```
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
 ### Error handling
 
-An integer `err` has to be supplied to some of the functions for storing error status. And two macros, `RANDMS_IS_ERROR(err)` and `RANDMS_IS_WARN(err)`, are defined for checking whether there is an error or warning message, respectively. Furthermore, the following function returns a string describing the problem in more detail:
+An integer `err` has to be supplied to some of the functions for storing error status. And two macros, `PRAND_IS_ERROR(err)` and `PRAND_IS_WARN(err)`, are defined for checking whether there is an error or warning message, respectively. Furthermore, the following function returns a string describing the problem in more detail:
 
 ```c
-char *randms_errmsg(const int err);
+char *prand_errmsg(const int err);
 ``` 
 
 <sub>[\[TOC\]](#table-of-contents)</sub>

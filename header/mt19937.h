@@ -1,10 +1,10 @@
 /*******************************************************************************
-* mt19937.h: this file is part of the randms library.
+* mt19937.h: this file is part of the prand library.
  
-* randms: C library for generating random numbers with multiple streams.
+* prand: parallel random number generator.
 
 * Github repository:
-        https://github.com/cheng-zhao/randms
+        https://github.com/cheng-zhao/prand
 
 * Copyright (c) 2020 Cheng Zhao <zhaocheng03@gmail.com>
  
@@ -31,7 +31,7 @@
 #ifndef __MT19937_H__
 #define __MT19937_H__
 
-#include "randms.h"
+#include "prand.h"
 
 /*============================================================================*\
       Definitions for the representation of polynomials with 32-bit words
@@ -102,7 +102,7 @@ Arguments:
 Return:
   A universal instance of the random number generator.
 ******************************************************************************/
-randms_t *mt19937_init(const uint64_t seed, const unsigned int nstream,
+prand_t *mt19937_init(const uint64_t seed, const unsigned int nstream,
     const uint64_t step, int *err);
 
 #endif
