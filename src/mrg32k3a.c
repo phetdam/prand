@@ -471,8 +471,8 @@ prand_t *mrg32k3a_init(const uint64_t seed, const unsigned int nstream,
 
   mrg32k3a_state_t *states = malloc(sizeof(mrg32k3a_state_t) * numstr);
   if (!states) {
-    free(rng);
     free(rng->state_stream);
+    free(rng);
     *err = PRAND_ERR_MEMORY;
     return NULL;
   }

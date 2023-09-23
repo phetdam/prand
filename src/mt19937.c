@@ -534,8 +534,8 @@ prand_t *mt19937_init(const uint64_t seed, const unsigned int nstream,
 
   mt19937_state_t *states =  malloc(sizeof(mt19937_state_t) * numstr);
   if (!states) {
-    free(rng);
     free(rng->state_stream);
+    free(rng);
     *err = PRAND_ERR_MEMORY;
     return NULL;
   }

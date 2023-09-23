@@ -67,7 +67,7 @@ Arguments:
 Return:
   A string with error message.
 ******************************************************************************/
-char *prand_errmsg(const int err) {
+const char *prand_errmsg(const int err) {
   switch (err) {
     case 0:
       return "no error";
