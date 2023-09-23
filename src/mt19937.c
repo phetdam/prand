@@ -484,7 +484,11 @@ static void mt19937_reset_all(prand_t *rng, const uint64_t seed,
   }
   else mt19937_seed(stat, seed);
 
-  if (!step) return;
+  if (!step) {
+    for (int i = 1; i < rng->nstream; i++)
+      memcpy(rng->state_stream[i], stat, sizeof(mt19937_state_t));
+    return;
+  }
   else if (step > MT19937_MAX_STEP) {
     *err = PRAND_ERR_STEP;
     return;

@@ -160,7 +160,7 @@ void prand_destroy(prand_t *rng);
 An integer `err` has to be supplied to some of the functions for storing error status. And two macros, `PRAND_IS_ERROR(err)` and `PRAND_IS_WARN(err)`, are defined for checking whether there is an error or warning message, respectively. Furthermore, the following function returns a string describing the problem in more detail:
 
 ```c
-char *prand_errmsg(const int err);
+const char *prand_errmsg(const int err);
 ``` 
 
 <sub>[\[TOC\]](#table-of-contents)</sub>

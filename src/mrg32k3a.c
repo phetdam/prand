@@ -31,6 +31,7 @@
 #include "mrg32k3a.h"
 #include "mrg32k3a_jump.h"
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 
 /*******************************************************************************
@@ -421,7 +422,11 @@ static void mrg32k3a_reset_all(prand_t *rng, const uint64_t seed,
   }
   else mrg32k3a_seed(stat, seed);
 
-  if (!step) return;
+  if (!step) {
+    for (int i = 1; i < rng->nstream; i++)
+      memcpy(rng->state_stream[i], stat, sizeof(mrg32k3a_state_t));
+    return;
+  }
   else if (step > MRG32K3A_MAX_STEP) {
     *err = PRAND_ERR_STEP;
     return;
