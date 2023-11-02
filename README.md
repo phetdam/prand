@@ -2,6 +2,7 @@
 # prand: parallel random number generator
 
 ![GitHub](https://img.shields.io/github/license/cheng-zhao/prand.svg)
+![Codacy grade](https://img.shields.io/codacy/grade/c20417a6bbb844c7969b022da0839d9d.svg)
 
 ## Table of Contents
 
@@ -15,9 +16,9 @@
     -   [Releasing memory](#releasing-memory)
     -   [Error handling](#error-handling)
     -   [Examples](#examples)
- -   [Random number generator algorithms](#random-number-generator-algorithms)
- -   [Acknowledgements](#acknowledgements)
- -   [References](#references)
+-   [Random number generator algorithms](#random-number-generator-algorithms)
+-   [Acknowledgements](#acknowledgements)
+-   [References](#references)
 
 ## Introduction
 
@@ -205,7 +206,7 @@ This library benefits from the following open-source projects:
 
 <span id="ref6">\[6\]</span> Bradley, du Toit, Tong, Giles & Woodhams, 2011, [Parallelization Techniques for Random Number Generators](https://doi.org/10.1016/B978-0-12-384988-5.00016-4), GPU Computing Gems Emerald Edition, _Morgan Kaufmann_, 231&ndash;246
 
-<span id="ref6">\[7\]</span> Haramoto, Matsumoto & L'Ecuyer, 2008, [A Fast Jump Ahead Algorithm for Linear Recurrences in a Polynomial Space](https://doi.org/10.1007/978-3-540-85912-3_26), Sequences and Their Applications &ndash; SETA 2008, _Springer Berlin Heidelberg_, 290&ndash;298
+<span id="ref7">\[7\]</span> Haramoto, Matsumoto & L'Ecuyer, 2008, [A Fast Jump Ahead Algorithm for Linear Recurrences in a Polynomial Space](https://doi.org/10.1007/978-3-540-85912-3_26), Sequences and Their Applications &ndash; SETA 2008, _Springer Berlin Heidelberg_, 290&ndash;298
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
