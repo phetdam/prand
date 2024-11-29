@@ -1,0 +1,4 @@
+# ensure LF line endings
+* text=auto
+# batch scripts must have CRLF to prevent some subtle errors
+*.bat text eol=crlf

@@ -1,0 +1,5 @@
+# Vim swap files
+*.swp
+# common build directories
+/build
+/build_windows*
