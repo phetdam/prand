@@ -34,6 +34,8 @@ This library is compliant with the ISO C99 standard, thread-safe, and does not r
 
 ## Compilation and linking
 
+### Using Make
+
 On most unix-like systems, the library can be simply compiled with
 
 ```console
@@ -44,6 +46,41 @@ $ make install
 By default a static library `libprand.a` is created in the `lib` subfolder, and a header file `prand.h` is copied to the `include` subfolder, of the current working directory. One can change the `PREFIX` entry in [Makefile](Makefile#L5) to customise the installation path of the library.
 
 To link the library with a program, one has to add the `-lprand` flag for the compilation. And if this library is not installed in the default path for system libraries, the `-I` and `-L` options are also necessary for specifying the path to the header and library files. An example of the [Makefile](example/Makefile) for linking prand is provided in the [example](example) folder.
+
+### Using CMake
+
+One can also use CMake to build and install the prand library. On \*nix systems,
+the release config can be built with:
+
+```shell
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j
+```
+
+This can then be installed into a preferred install directory with:
+
+```shell
+cmake --install build --prefix <install-root>
+```
+On Windows systems, one can run from the Developer Command Prompt the 64-bit
+build config:
+
+```shell
+cmake -S . -B build_win -A x64
+```
+
+There is choice to build either Debug or Release config. For Release, run:
+
+```shell
+cmake --build build_win --config Release -j
+```
+
+To then install the Release config to a preferred install prefix, use:
+
+```shell
+cmake --install build_win --prefix <install-root> --config Release
+```
+
+Currently, however, there is no CMake config files provided.
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
