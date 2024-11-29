@@ -28,6 +28,8 @@ endif()
 
 # build examples
 option(PRAND_BUILD_EXAMPLES "Build example programs" ON)
+# if building static, build using position-independent code
+option(PRAND_STATIC_PIC "BUild static library as PIC" OFF)
 
 # print config options
 if(PRAND_IS_MULTI_CONFIG)
@@ -45,6 +47,11 @@ if(PRAND_BUILD_EXAMPLES)
     message(STATUS "Build examples: Yes")
 else()
     message(STATUS "Build examples: No")
+endif()
+if(PRAND_STATIC_PIC)
+    message(STATUS "Build PIC static: Yes")
+else()
+    message(STATUS "Build PIC static: No")
 endif()
 
 # compile options
