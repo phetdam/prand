@@ -47,6 +47,8 @@ By default a static library `libprand.a` is created in the `lib` subfolder, and 
 
 To link the library with a program, one has to add the `-lprand` flag for the compilation. And if this library is not installed in the default path for system libraries, the `-I` and `-L` options are also necessary for specifying the path to the header and library files. An example of the [Makefile](example/Makefile) for linking prand is provided in the [example](example) folder.
 
+<sub>[\[TOC\]](#table-of-contents)</sub>
+
 ### Using CMake
 
 One can also use CMake to build and install the prand library. On \*nix systems,
@@ -199,7 +201,7 @@ An integer `err` has to be supplied to some of the functions for storing error s
 
 ```c
 const char *prand_errmsg(const int err);
-``` 
+```
 
 <sub>[\[TOC\]](#table-of-contents)</sub>
 
