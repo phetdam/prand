@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION})
 
 # libprand
 add_library(prand mrg32k3a.c mt19937.c mt19937_poly.c prand.c)
+# headers are in src/header (part of link interface)
+target_include_directories(prand PUBLIC header)
 # if requested, build with position-independent code even for static builds
 if(PRAND_STATIC_PIC)
     set_target_properties(prand PROPERTIES POSITION_INDEPENDENT_CODE ON)

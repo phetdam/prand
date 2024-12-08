@@ -69,9 +69,6 @@ else()
     add_compile_options(-Wall)
 endif()
 
-# headers are in src/header
-include_directories(src/header)
-
 # enable add_test command
 include(CTest)
 
